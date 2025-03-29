@@ -1,6 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from database import Base
+
+carrera_ramos = Table(
+    "carreras_ramos",
+    Base.metadata,
+    Column("carrera_id", Integer, ForeignKey("carreras.id"), primary_key=True),
+    Column("ramo_id", Integer, ForeignKey("ramos.id"), primary_key=True)
+)
 
 class Carrera (Base):
     __tablename__ = "carreras"
@@ -9,7 +16,7 @@ class Carrera (Base):
     nombre = Column(String, unique=True, index=True)
 
     #Relaciones
-    ramos = relationship("Ramo", back_populates="carrera")
+    ramos = relationship("Ramo", secondary=carrera_ramos ,back_populates="carreras")
 
 class Ramo (Base): 
     __tablename__ = "ramos"
@@ -17,11 +24,13 @@ class Ramo (Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True)
     semestre = Column(Integer)
-    carrera_id = Column(Integer, ForeignKey("carreras.id"))
+    
 
-    carrera = relationship("Carrera", back_populates="ramos")
+    carreras = relationship("Carrera", secondary=carrera_ramos ,back_populates="ramos")
     prerequisitos = relationship("Prerequisito", foreign_keys="[Prerequisito.ramo_id]", back_populates="ramo")
     desbloquea = relationship("Prerequisito", foreign_keys="[Prerequisito.requisito_id]", back_populates="requisito")
+
+
 
 class Prerequisito (Base):
     __tablename__ = "prerequisitos"
@@ -32,3 +41,4 @@ class Prerequisito (Base):
 
     ramo = relationship("Ramo", foreign_keys=[ramo_id], back_populates="prerequisitos")
     requisito = relationship("Ramo", foreign_keys=[requisito_id], back_populates="desbloquea")
+

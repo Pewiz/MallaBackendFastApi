@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import SessionLocal
 import crud, schemas, models
@@ -13,8 +14,14 @@ def get_db():
         db.close()
 
 @router.post("/ramos/", response_model=schemas.RamoResponse)
-def crear_ramo(ramo: schemas.RamoCreate, db: Session = Depends(get_db)):
-    return crud.create_ramo(db, ramo)
+def crear_ramo(
+    ramo_nombre: str = Query(..., description="Nombre del ramo"),
+    semestre: int = Query(..., description="Semestre del ramo"),
+    carreras_ids: List[int] = Query(..., description="IDs de las carreras"),
+    db: Session = Depends(get_db)
+):
+    ramo = schemas.RamoCreate(nombre=ramo_nombre, semestre=semestre)
+    return crud.create_ramo(db, ramo, carreras_ids, semestre)
 
 @router.get("/ramos/", response_model=list[schemas.RamoResponse])
 def listar_ramos(db: Session = Depends(get_db)):
