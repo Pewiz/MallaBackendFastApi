@@ -18,8 +18,11 @@ def create_ramo(db: Session, ramo: RamoCreate):
     db.commit()
     db.refresh(nuevo_ramo)
     return nuevo_ramo
+
+def get_ramos_por_carrera(db: Session, carrera_id: int):
+    return db.query(Ramo).filter(Ramo.carrera_id == carrera_id).all()
     
-def get_ramos_por_carrera (db: Session, prereq: PrerequisitoCreate):
+def create_prerequisito (db: Session, prereq: PrerequisitoCreate):
     nuevo_prereq = Prerequisito(**prereq.dict())
     db.add(nuevo_prereq)
     db.commit()
