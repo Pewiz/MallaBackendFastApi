@@ -9,7 +9,7 @@ class CarreraCreate (CarreraBase):
 
 class CarreraResponse (CarreraBase):
     id: int
-    ramos: List[str]
+    ramos: List["RamoResponse"]
     class Config:
         from_attributes = True
     
@@ -22,22 +22,19 @@ class RamoCreate (RamoBase):
 
 class RamoResponse (RamoBase):
     id: int
-    carreras: List[CarreraBase]
+    carreras: Optional[List[CarreraBase]] = None
+    prev: List[str] = []
+    next: List[str] = []
     class Config:
         from_attributes = True
 
 class PrerequisitoBase (BaseModel):
-    ramo_id: int
-    requisito_id: int
+    ramo_nombre: str
+    requisito_nombre: str
 
 class PrerequisitoCreate(PrerequisitoBase):
     pass 
     
 class PrerequisitoResponse(BaseModel):
-    ramo_id: int
-    ramo_nombre: str
-    requisito_id: int
-    requisito_nombre: str
-
     class Config:
         from_attributes = True

@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import SessionLocal
 import crud, schemas
+from crud import get_carrera_con_ramos
+from schemas import CarreraResponse
 
 router = APIRouter()
 
@@ -24,3 +26,9 @@ def crear_carrera(
 def listar_carrera(db: Session = Depends(get_db)):
     return crud.get_carreras(db)
 
+@router.get("/carreras/{carrera_id}", response_model=CarreraResponse)
+def obtener_carrera(carrera_id: int, db: Session = Depends(get_db)):
+    carrera_data = get_carrera_con_ramos(db, carrera_id)
+    if not carrera_data:
+        raise HTTPException(status_code=404, detail="Carrera no encontrada")
+    return carrera_data

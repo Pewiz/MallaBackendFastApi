@@ -1,7 +1,8 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased, joinedload
 from models import Carrera, Ramo, Prerequisito
-from schemas import CarreraCreate, RamoCreate, PrerequisitoCreate
+from schemas import CarreraCreate, RamoCreate, PrerequisitoCreate, CarreraResponse, RamoResponse
 
+RamoRequisito = aliased(Ramo)
 
 def create_carrera(db: Session, carrera: CarreraCreate):
     nueva_carrera = Carrera(nombre=carrera.nombre)
@@ -11,10 +12,82 @@ def create_carrera(db: Session, carrera: CarreraCreate):
     return nueva_carrera
 
 
+def get_carrera_con_ramos(db: Session, carrera_id: int):
+    # Consulta principal con todas las relaciones
+    carrera = db.query(Carrera).options(
+        joinedload(Carrera.ramos).subqueryload(Ramo.prerequisitos),
+        joinedload(Carrera.ramos).subqueryload(Ramo.desbloquea)
+    ).filter(Carrera.id == carrera_id).first()
+    
+    if not carrera:
+        return None
+    
+    # Mapeo de todos los ramos para evitar consultas adicionales
+    todos_ramos = {r.id: r.nombre for r in db.query(Ramo.id, Ramo.nombre).all()}
+    
+    # Procesar ramos con relaciones
+    ramos_procesados = []
+    for ramo in carrera.ramos:
+        ramo_data = {
+            "id": ramo.id,
+            "nombre": ramo.nombre,
+            "semestre": ramo.semestre,
+            "prev": [
+                todos_ramos[p.requisito_id]
+                for p in ramo.prerequisitos
+                if p.requisito_id in todos_ramos
+            ],
+            "next": [
+                todos_ramos[d.ramo_id]
+                for d in ramo.desbloquea
+                if d.ramo_id in todos_ramos
+            ],
+            "carreras": None
+        }
+        ramos_procesados.append(ramo_data)
+    
+    return {
+        "id": carrera.id,
+        "nombre": carrera.nombre,
+        "ramos": ramos_procesados
+    }
+
 def get_carreras(db: Session):
-    return db.query(Carrera).all()
-
-
+    # Consulta principal con todas las relaciones necesarias
+    carreras = db.query(Carrera).options(
+        joinedload(Carrera.ramos).subqueryload(Ramo.prerequisitos),
+        joinedload(Carrera.ramos).subqueryload(Ramo.desbloquea)
+    ).all()
+    
+    # Obtenemos todos los ramos existentes en un diccionario
+    todos_ramos = {r.id: r.nombre for r in db.query(Ramo.id, Ramo.nombre).all()}
+    
+    return [
+        CarreraResponse(
+            id=c.id,
+            nombre=c.nombre,
+            ramos=[
+                RamoResponse(
+                    id=r.id,
+                    nombre=r.nombre,
+                    semestre=r.semestre,
+                    carreras=None,
+                    prev=[
+                        todos_ramos[p.requisito_id]
+                        for p in r.prerequisitos
+                        if p.requisito_id in todos_ramos
+                    ],
+                    next=[
+                        todos_ramos[d.ramo_id]
+                        for d in r.desbloquea
+                        if d.ramo_id in todos_ramos
+                    ]
+                )
+                for r in c.ramos
+            ]
+        )
+        for c in carreras
+    ]
 def create_ramo(db: Session, ramo: RamoCreate, carreras_ids: list[int], semestre: int):
     db_ramo = db.query(Ramo).filter(
         Ramo.nombre == ramo.nombre, Ramo.semestre == semestre).first()
@@ -49,38 +122,23 @@ def create_prerequisito(db: Session, prereq: PrerequisitoCreate):
 
 
 def get_prerequisitos(db: Session, ramo_id: int):
-    prerequisitos = db.query(Prerequisito).filter(Prerequisito.ramo_id == ramo_id).all()
-    result = []
-    for p in prerequisitos:
-        ramo = db.query(Ramo).filter(Ramo.id == p.ramo_id).first()
-        requisito = db.query(Ramo).filter(Ramo.id == p.requisito_id).first()
-        result.append({
-            "ramo_id": p.ramo_id,
-            "ramo_nombre": ramo.nombre if ramo else "",
-            "requisito_id": p.requisito_id,
-            "requisito_nombre": requisito.nombre if requisito else ""
-        })
-    return result
+    # Consulta directa con join para obtener los nombres en una sola query
+    return db.query(
+        Ramo.nombre.label("ramo_nombre"),
+        RamoRequisito.nombre.label("requisito_nombre")
+    ).select_from(Prerequisito)\
+     .join(Ramo, Ramo.id == Prerequisito.ramo_id)\
+     .join(RamoRequisito, RamoRequisito.id == Prerequisito.requisito_id)\
+     .filter(Prerequisito.ramo_id == ramo_id)\
+     .all()
 
 def get_ramos_desbloqueados(db: Session, requisito_id: int):
-    # Obtener todos los registros de desbloqueo
-    desbloqueados = db.query(Prerequisito).filter(Prerequisito.requisito_id == requisito_id).all()
-    
-    if not desbloqueados:
-        return []
-    
-    # Obtener todos los IDs de ramos involucrados
-    ramo_ids = {d.ramo_id for d in desbloqueados}
-    ramo_ids.add(requisito_id)  # Añadir el ramo requisito
-    
-    # Obtener todos los nombres de ramos en una sola consulta
-    ramos = db.query(Ramo.id, Ramo.nombre).filter(Ramo.id.in_(ramo_ids)).all()
-    ramos_dict = {r.id: r.nombre for r in ramos}
-    
-    # Construir la respuesta
-    return [{
-        "ramo_id": d.ramo_id,
-        "ramo_nombre": ramos_dict.get(d.ramo_id, ""),
-        "requisito_id": d.requisito_id,
-        "requisito_nombre": ramos_dict.get(d.requisito_id, "")
-    } for d in desbloqueados]
+    # Misma lógica pero filtramos por requisito_id
+    return db.query(
+        Ramo.nombre.label("ramo_nombre"),
+        RamoRequisito.nombre.label("requisito_nombre")
+    ).select_from(Prerequisito)\
+     .join(Ramo, Ramo.id == Prerequisito.ramo_id)\
+     .join(RamoRequisito, RamoRequisito.id == Prerequisito.requisito_id)\
+     .filter(Prerequisito.requisito_id == requisito_id)\
+     .all()
