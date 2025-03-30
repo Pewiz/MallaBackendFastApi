@@ -28,13 +28,27 @@ class RamoResponse (RamoBase):
     class Config:
         from_attributes = True
 
-class PrerequisitoBase (BaseModel):
+class PrerequisitoBase(BaseModel):
+    ramo_id: int
+    requisito_id: int
+
+class PrerequisitoCreate(PrerequisitoBase):
+    pass
+
+class PrerequisitoResponse(BaseModel):
+    ramo_id: int
+    requisito_id: int
     ramo_nombre: str
     requisito_nombre: str
 
-class PrerequisitoCreate(PrerequisitoBase):
-    pass 
-    
-class PrerequisitoResponse(BaseModel):
+    class Config:
+        from_attributes = True
+
+class RamosDesbloqueadosResponse(BaseModel):
+    ramo_id: int
+    requisito_id: int
+    ramo_nombre: str
+    requisito_nombre: str
+
     class Config:
         from_attributes = True

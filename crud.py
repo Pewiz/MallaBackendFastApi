@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session, aliased, joinedload
 from models import Carrera, Ramo, Prerequisito
 from schemas import CarreraCreate, RamoCreate, PrerequisitoCreate, CarreraResponse, RamoResponse
@@ -114,16 +115,24 @@ def get_ramos_por_carrera(db: Session, carrera_id: int):
 
 
 def create_prerequisito(db: Session, prereq: PrerequisitoCreate):
-    nuevo_prereq = Prerequisito(**prereq.dict())
+    ramo = db.query(Ramo).filter(Ramo.id == prereq.ramo_id).first()
+    requisito = db.query(Ramo).filter(Ramo.id == prereq.requisito_id).first()
+    
+    if not ramo or not requisito:
+        raise HTTPException(status_code=404, detail="Ramo o requisito no encontrado")
+
+    nuevo_prereq = Prerequisito(ramo_id=prereq.ramo_id, requisito_id=prereq.requisito_id)
     db.add(nuevo_prereq)
     db.commit()
     db.refresh(nuevo_prereq)
-    return nuevo_prereq
+    return {"ramo_id": ramo.id, "requisito_id": requisito.id}
+
 
 
 def get_prerequisitos(db: Session, ramo_id: int):
-    # Consulta directa con join para obtener los nombres en una sola query
     return db.query(
+        Prerequisito.ramo_id,
+        Prerequisito.requisito_id,
         Ramo.nombre.label("ramo_nombre"),
         RamoRequisito.nombre.label("requisito_nombre")
     ).select_from(Prerequisito)\
@@ -132,9 +141,11 @@ def get_prerequisitos(db: Session, ramo_id: int):
      .filter(Prerequisito.ramo_id == ramo_id)\
      .all()
 
+
 def get_ramos_desbloqueados(db: Session, requisito_id: int):
-    # Misma lógica pero filtramos por requisito_id
     return db.query(
+        Prerequisito.ramo_id,
+        Prerequisito.requisito_id,
         Ramo.nombre.label("ramo_nombre"),
         RamoRequisito.nombre.label("requisito_nombre")
     ).select_from(Prerequisito)\
