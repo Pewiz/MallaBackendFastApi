@@ -5,6 +5,7 @@ from schemas import CarreraCreate, RamoCreate, PrerequisitoCreate, CarreraRespon
 from sqlalchemy import func
 RamoRequisito = aliased(Ramo)
 
+
 def create_carrera(db: Session, carrera: CarreraCreate):
     nueva_carrera = Carrera(nombre=carrera.nombre)
     db.add(nueva_carrera)
@@ -19,13 +20,14 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
         joinedload(Carrera.ramos).subqueryload(Ramo.prerequisitos),
         joinedload(Carrera.ramos).subqueryload(Ramo.desbloquea)
     ).filter(Carrera.id == carrera_id).first()
-    
+
     if not carrera:
         return None
-    
+
     # Mapeo de todos los ramos para evitar consultas adicionales
-    todos_ramos = {r.id: r.nombre for r in db.query(Ramo.id, Ramo.nombre).all()}
-    
+    todos_ramos = {r.id: r.nombre for r in db.query(
+        Ramo.id, Ramo.nombre).all()}
+
     # Procesar ramos con relaciones
     ramos_procesados = []
     for ramo in carrera.ramos:
@@ -46,12 +48,13 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
             "carreras": None
         }
         ramos_procesados.append(ramo_data)
-    
+
     return {
         "id": carrera.id,
         "nombre": carrera.nombre,
         "ramos": ramos_procesados
     }
+
 
 def get_carreras(db: Session):
     # Consulta principal con todas las relaciones necesarias
@@ -59,21 +62,22 @@ def get_carreras(db: Session):
         joinedload(Carrera.ramos).subqueryload(Ramo.prerequisitos),
         joinedload(Carrera.ramos).subqueryload(Ramo.desbloquea)
     ).all()
-    
+
     # Diccionario con información de todos los ramos: id -> {nombre, semestre}
     todos_ramos = {
-        r.id: {"nombre": r.nombre, "semestre": r.semestre} 
+        r.id: {"nombre": r.nombre, "semestre": r.semestre}
         for r in db.query(Ramo.id, Ramo.nombre, Ramo.semestre).all()
     }
-    
+
     # Calcular el máximo semestre de prerequisitos por ramo usando SQL
     max_prereq_sem = db.query(
         Prerequisito.ramo_id,
         func.max(Ramo.semestre).label('max_sem')
     ).join(Ramo, Prerequisito.requisito_id == Ramo.id).group_by(Prerequisito.ramo_id).all()
-    
-    max_pre_semester = {ramo_id: max_sem for ramo_id, max_sem in max_prereq_sem}
-    
+
+    max_pre_semester = {ramo_id: max_sem for ramo_id,
+                        max_sem in max_prereq_sem}
+
     resultado = []
     for c in carreras:
         carrera_resp = {
@@ -83,18 +87,19 @@ def get_carreras(db: Session):
         }
         for r in c.ramos:
             # 'prev' incluye todos los prerequisitos (nombres)
-            prev_list = [todos_ramos[p.requisito_id]["nombre"] for p in r.prerequisitos]
-            
+            prev_list = [todos_ramos[p.requisito_id]["nombre"]
+                         for p in r.prerequisitos]
+
             # 'next' filtra cursos desbloqueados según condiciones
             next_list = []
             for d in r.desbloquea:
                 unlocked_id = d.ramo_id
                 unlocked_info = todos_ramos[unlocked_id]
                 unlocked_name = unlocked_info["nombre"]
-                
+
                 if unlocked_name in ["Práctica Profesional", "Anteproyecto de Título"]:
                     continue
-                
+
                 # Verificar si el semestre máximo de prerequisitos coincide con el semestre actual
                 if unlocked_id in max_pre_semester:
                     if max_pre_semester[unlocked_id] == r.semestre:
@@ -102,7 +107,7 @@ def get_carreras(db: Session):
                 else:
                     # Si no tiene prerequisitos, se incluye (caso válido si es consistente)
                     next_list.append(unlocked_name)
-            
+
             ramo_resp = {
                 "id": r.id,
                 "nombre": r.nombre,
@@ -113,7 +118,7 @@ def get_carreras(db: Session):
             }
             carrera_resp["ramos"].append(ramo_resp)
         resultado.append(carrera_resp)
-    
+
     return resultado
 
 
@@ -145,16 +150,17 @@ def get_ramos_por_carrera(db: Session, carrera_id: int):
 def create_prerequisito(db: Session, prereq: PrerequisitoCreate):
     ramo = db.query(Ramo).filter(Ramo.id == prereq.ramo_id).first()
     requisito = db.query(Ramo).filter(Ramo.id == prereq.requisito_id).first()
-    
-    if not ramo or not requisito:
-        raise HTTPException(status_code=404, detail="Ramo o requisito no encontrado")
 
-    nuevo_prereq = Prerequisito(ramo_id=prereq.ramo_id, requisito_id=prereq.requisito_id)
+    if not ramo or not requisito:
+        raise HTTPException(
+            status_code=404, detail="Ramo o requisito no encontrado")
+
+    nuevo_prereq = Prerequisito(
+        ramo_id=prereq.ramo_id, requisito_id=prereq.requisito_id)
     db.add(nuevo_prereq)
     db.commit()
     db.refresh(nuevo_prereq)
     return {"ramo_id": ramo.id, "requisito_id": requisito.id}
-
 
 
 def get_prerequisitos(db: Session, ramo_id: int):

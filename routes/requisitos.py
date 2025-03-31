@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import SessionLocal
-import crud, schemas
+import crud
+import schemas
 
-router = APIRouter()
+router = APIRouter(prefix="/prerequisitos", tags=["Prerequisitos"])
+
 
 def get_db():
     db = SessionLocal()
@@ -13,13 +15,16 @@ def get_db():
         db.close()
 
 
-@router.post("/prerequisitos/", response_model=schemas.PrerequisitoBase)
+@router.post("/", response_model=schemas.PrerequisitoBase)
 def agregar_prerequisito(
-    ramo_id: int = Query(..., description="ID del ramo que tiene el requisito"),
-    requisito_id: int = Query(..., description="ID del ramo que es el requisito"),
+    ramo_id: int = Query(...,
+                         description="ID del ramo que tiene el requisito"),
+    requisito_id: int = Query(...,
+                              description="ID del ramo que es el requisito"),
     db: Session = Depends(get_db),
 ):
-    prereq_data = schemas.PrerequisitoCreate(ramo_id=ramo_id, requisito_id=requisito_id)
+    prereq_data = schemas.PrerequisitoCreate(
+        ramo_id=ramo_id, requisito_id=requisito_id)
     return crud.create_prerequisito(db, prereq_data)
 
 
@@ -27,7 +32,8 @@ def agregar_prerequisito(
 def obtener_prerequisitos(ramo_id: int, db: Session = Depends(get_db)):
     prerequisitos = crud.get_prerequisitos(db, ramo_id)
     if not prerequisitos:
-        raise HTTPException(status_code=404, detail="Este ramo no tiene prerequisitos")
+        raise HTTPException(
+            status_code=404, detail="Este ramo no tiene prerequisitos")
     return prerequisitos
 
 
@@ -35,5 +41,6 @@ def obtener_prerequisitos(ramo_id: int, db: Session = Depends(get_db)):
 def obtener_ramos_desbloqueados(requisito_id: int, db: Session = Depends(get_db)):
     desbloqueados = crud.get_ramos_desbloqueados(db, requisito_id)
     if not desbloqueados:
-        raise HTTPException(status_code=404, detail="Este ramo no desbloquea ningún ramo")
+        raise HTTPException(
+            status_code=404, detail="Este ramo no desbloquea ningún ramo")
     return desbloqueados

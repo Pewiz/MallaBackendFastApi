@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from database import engine, Base 
+from database import engine, Base
 import routes.carreras as carreras
 import routes.ramos as ramos
 import routes.requisitos as requisitos
