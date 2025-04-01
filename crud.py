@@ -76,6 +76,7 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
 
     return {
         "id": carrera.id,
+        "slug": carrera.slug,
         "nombre": carrera.nombre,
         "nombre_malla": carrera.nombre_malla,
         "url_image": carrera.url_image,
@@ -85,9 +86,9 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
 
 
 def get_carreras(db: Session):
-    carreras = db.query(Carrera.id, Carrera.nombre, Carrera.nombre_malla, Carrera.link_admision ,Carrera.url_image).all()
+    carreras = db.query(Carrera.id, Carrera.slug ,Carrera.nombre, Carrera.nombre_malla, Carrera.link_admision ,Carrera.url_image).all()
     
-    return [{"id": c.id, "nombre": c.nombre, "nombre_malla": c.nombre_malla, "link_admision": c.link_admision ,"url_image": c.url_image} for c in carreras]
+    return [{"id": c.id, "slug": c.slug ,"nombre": c.nombre, "nombre_malla": c.nombre_malla, "link_admision": c.link_admision ,"url_image": c.url_image} for c in carreras]
 
 
 def create_ramo(db: Session, ramo: RamoCreate, carreras_ids: list[int], semestre: int):

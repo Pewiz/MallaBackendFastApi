@@ -14,6 +14,7 @@ class Carrera (Base):
     __tablename__ = "carreras"
 
     id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String)
     nombre = Column(String, unique=True, index=True)
     nombre_malla = Column(String)
     link_admision = Column(String)

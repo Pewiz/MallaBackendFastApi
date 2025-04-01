@@ -15,6 +15,7 @@ class CarreraCreate (CarreraBase):
 
 class CarreraSimpleResponse(CarreraBase):
     id: int    
+    slug:str
     nombre: str
     nombre_malla:str
     link_admision: str
@@ -24,7 +25,8 @@ class CarreraSimpleResponse(CarreraBase):
     
 
 class CarreraCompletaResponse (CarreraBase):
-    id: int    
+    id: int   
+    slug:str 
     nombre: str
     nombre_malla:str
     link_admision: str
