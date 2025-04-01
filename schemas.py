@@ -1,19 +1,35 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from fastapi import UploadFile
 
 
 class CarreraBase (BaseModel):
     nombre: str
-
+    nombre_malla:str
+    link_admision: str
+    url_image: Optional[UploadFile] = None
 
 class CarreraCreate (CarreraBase):
     pass
 
 
-class CarreraResponse (CarreraBase):
-    id: int
-    ramos: List["RamoResponse"]
+class CarreraSimpleResponse(CarreraBase):
+    id: int    
+    nombre: str
+    nombre_malla:str
+    link_admision: str
+    url_image: Optional[str]
+    class Config:
+        from_attributes = True
+    
 
+class CarreraCompletaResponse (CarreraBase):
+    id: int    
+    nombre: str
+    nombre_malla:str
+    link_admision: str
+    url_image: Optional[str]
+    ramos: List["RamoSimpleResponse"]
     class Config:
         from_attributes = True
 
@@ -26,6 +42,13 @@ class RamoBase (BaseModel):
 class RamoCreate (RamoBase):
     pass
 
+
+class RamoSimpleResponse (RamoBase):
+    id: int
+    prev: List[str] = []
+    next: List[str] = []
+    class Config:
+        from_attributes = True
 
 class RamoResponse (RamoBase):
     id: int

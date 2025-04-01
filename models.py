@@ -15,6 +15,9 @@ class Carrera (Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, unique=True, index=True)
+    nombre_malla = Column(String)
+    link_admision = Column(String)
+    url_image = Column(String(255))
 
     # Relaciones
     ramos = relationship("Ramo", secondary=carrera_ramos,

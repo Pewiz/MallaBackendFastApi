@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, Form, File
 from sqlalchemy.orm import Session
+from cloudinary_config import upload_image
 from database import SessionLocal
 import crud
+from models import Carrera
 import schemas
-from crud import get_carrera_con_ramos
-from schemas import CarreraResponse
+from crud import get_carrera_con_ramos, get_carreras
+from schemas import CarreraCompletaResponse, CarreraSimpleResponse
 
 router = APIRouter(prefix="/carreras", tags=["Carreras"])
 
@@ -17,23 +19,38 @@ def get_db():
         db.close()
 
 
-@router.post("/", response_model=schemas.CarreraResponse)
-def crear_carrera(
-    nombre: str = Query(..., description="Nombre de la carrera"),
+@router.post("/carreras", response_model=CarreraCompletaResponse)
+async def crear_carrera(
+    nombre: str = Form(...),
+    nombre_malla: str = Form(...),
+    link_admision: str = Form(...),
+    url_image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    carrera = schemas.CarreraCreate(nombre=nombre)
-    return crud.create_carrera(db, carrera)
 
+    # Subir imagen si existe
+    url_imagee = None
+    if url_image:
+        url_imagee = await upload_image(url_image)
 
-@router.get("/", response_model=list[schemas.CarreraResponse])
-def listar_carrera(db: Session = Depends(get_db)):
-    return crud.get_carreras(db)
+    # Crear la carrera
+    db_carrera = Carrera(
+        nombre=nombre,
+        nombre_malla=nombre_malla,
+        link_admision = link_admision,
+        url_image=url_imagee
+    )
+    
+    db.add(db_carrera)
+    db.commit()
+    db.refresh(db_carrera)
+    
+    return db_carrera
 
+@router.get("/carreras", response_model=list[CarreraSimpleResponse])
+def obtener_carreras(db: Session = Depends(get_db)):
+    return get_carreras(db)
 
-@router.get("/{carrera_id}", response_model=CarreraResponse)
+@router.get("/carreras/{carrera_id}", response_model=CarreraCompletaResponse)
 def obtener_carrera(carrera_id: int, db: Session = Depends(get_db)):
-    carrera_data = get_carrera_con_ramos(db, carrera_id)
-    if not carrera_data:
-        raise HTTPException(status_code=404, detail="Carrera no encontrada")
-    return carrera_data
+    return get_carrera_con_ramos(db,carrera_id)
