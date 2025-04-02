@@ -6,7 +6,6 @@
       "use": "@vercel/python",
       "config": {
         "runtime": "python3.11",
-        "maxLambdaSize": "15mb",
         "includeFiles": ["**/*.py", "**/*.json", ".env"]
       }
     }
