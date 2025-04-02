@@ -7,9 +7,10 @@ class CarreraBase (BaseModel):
     nombre: str
     nombre_malla:str
     link_admision: str
-    url_image: Optional[UploadFile] = None
+    url_image: Optional[str] = None
 
 class CarreraCreate (CarreraBase):
+    url_image: Optional[UploadFile] = None
     pass
 
 
