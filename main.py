@@ -4,14 +4,17 @@ import routes.carreras as carreras
 import routes.ramos as ramos
 import routes.requisitos as requisitos
 
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
 
+@app.on_event("startup")
+async def startup():
+    """Se ejecuta cuando la API inicia."""
+    Base.metadata.create_all(bind=engine)
+
+# Definir rutas
 app.include_router(carreras.router, prefix="/api")
 app.include_router(ramos.router, prefix="/api")
 app.include_router(requisitos.router, prefix="/api")
-
 
 @app.get("/")
 async def root():
