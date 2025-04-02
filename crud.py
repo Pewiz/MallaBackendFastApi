@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session, aliased, joinedload
 from models import Carrera, Ramo, Prerequisito
 from schemas import CarreraCreate, RamoCreate, PrerequisitoCreate, RamoResponse
-from sqlalchemy import func
+from sqlalchemy import func, case
 RamoRequisito = aliased(Ramo)
 
 
@@ -149,7 +149,10 @@ def get_ramos_desbloqueados(db: Session, requisito_id: int):
     return db.query(
         Prerequisito.ramo_id,
         Prerequisito.requisito_id,
-        Ramo.nombre.label("ramo_nombre"),
+        case(
+            (Ramo.nombre.in_(["Práctica Profesional", "Anteproyecto de Titulo"]), None),
+            else_=Ramo.nombre
+        ).label("ramo_nombre"),
         RamoRequisito.nombre.label("requisito_nombre")
     ).select_from(Prerequisito)\
      .join(Ramo, Ramo.id == Prerequisito.ramo_id)\
