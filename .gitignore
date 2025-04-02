@@ -43,3 +43,5 @@ migrations/
 htmlcov/
 *.cover
 *.pyc
+
+.vercel
