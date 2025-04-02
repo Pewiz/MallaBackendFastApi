@@ -11,3 +11,8 @@ app = FastAPI()
 app.include_router(carreras.router, prefix="/api")
 app.include_router(ramos.router, prefix="/api")
 app.include_router(requisitos.router, prefix="/api")
+
+
+@app.get("/")
+async def root():
+    return {"message": "API funcionando correctamente 🚀"}
