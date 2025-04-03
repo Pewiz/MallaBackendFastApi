@@ -6,6 +6,17 @@ import routes.requisitos as requisitos
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Puedes cambiarlo a ["http://localhost:4321"] si quieres más seguridad
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Permite todos los headers
+)
+
+
 @app.on_event("startup")
 async def startup():
     """Se ejecuta cuando la API inicia."""
