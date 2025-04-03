@@ -53,7 +53,7 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
                 continue
             unlocked_name = unlocked_info["nombre"]
 
-            if unlocked_name in ["Práctica Profesional", "Anteproyecto de Título"]:
+            if unlocked_name in ["Práctica Profesional", "Anteproyecto de Título", "Taller Integrado I", "Taller Integrado II", "Internado Gestión del Cuidado I", "Internado Gestión del Cuidado II"]:
                 continue
 
             # Verificar si el semestre máximo de prerequisitos coincide con el semestre actual
