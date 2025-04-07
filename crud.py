@@ -24,45 +24,38 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
     if not carrera:
         return None
 
-    # Diccionario con información de todos los ramos: id -> {nombre, semestre}
+    # Diccionario con información de todos los ramos: id -> nombre
     todos_ramos = {
-        r.id: {"nombre": r.nombre, "semestre": r.semestre}
-        for r in db.query(Ramo.id, Ramo.nombre, Ramo.semestre).all()
+        r.id: r.nombre
+        for r in db.query(Ramo.id, Ramo.nombre).all()
     }
 
-    # Calcular el máximo semestre de prerequisitos por ramo usando SQL
-    max_prereq_sem = db.query(
-        Prerequisito.ramo_id,
-        func.max(Ramo.semestre).label('max_sem')
-    ).join(Ramo, Prerequisito.requisito_id == Ramo.id).group_by(Prerequisito.ramo_id).all()
-
-    max_pre_semester = {ramo_id: max_sem for ramo_id, max_sem in max_prereq_sem}
-
-    # Procesar ramos con relaciones
     ramos_procesados = []
     for ramo in carrera.ramos:
-        # 'prev' incluye todos los prerequisitos (nombres)
-        prev_list = [todos_ramos[p.requisito_id]["nombre"] for p in ramo.prerequisitos]
+        # Lista de prerequisitos (nombres)
+        prev_list = [todos_ramos.get(p.requisito_id) for p in ramo.prerequisitos]
 
-        # 'next' filtra cursos desbloqueados según condiciones
+        # Lista de ramos que desbloquea (nombres)
         next_list = []
         for d in ramo.desbloquea:
             unlocked_id = d.ramo_id
-            unlocked_info = todos_ramos.get(unlocked_id)
-            if not unlocked_info:
-                continue
-            unlocked_name = unlocked_info["nombre"]
+            unlocked_name = todos_ramos.get(unlocked_id)
 
-            if unlocked_name in ["Práctica Profesional", "Anteproyecto de Título", "Taller Integrado I", "Taller Integrado II", "Internado Gestión del Cuidado I", "Internado Gestión del Cuidado II"]:
+            if not unlocked_name:
                 continue
 
-            # Verificar si el semestre máximo de prerequisitos coincide con el semestre actual
-            if unlocked_id in max_pre_semester:
-                if max_pre_semester[unlocked_id] == ramo.semestre:
-                    next_list.append(unlocked_name)
-            else:
-                # Si no tiene prerequisitos, se incluye (caso válido si es consistente)
-                next_list.append(unlocked_name)
+            # Puedes excluir ramos específicos si quieres seguir filtrando algunos:
+            if unlocked_name in [
+                "Práctica Profesional",
+                "Anteproyecto de Título",
+                "Taller Integrado I",
+                "Taller Integrado II",
+                "Internado Gestión del Cuidado I",
+                "Internado Gestión del Cuidado II"
+            ]:
+                continue
+
+            next_list.append(unlocked_name)
 
         ramo_data = {
             "id": ramo.id,
