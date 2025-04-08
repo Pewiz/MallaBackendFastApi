@@ -51,7 +51,8 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
                 "Taller Integrado I",
                 "Taller Integrado II",
                 "Internado Gestión del Cuidado I",
-                "Internado Gestión del Cuidado II"
+                "Internado Gestión del Cuidado II",
+                "Proyecto de Título"
             ]:
                 continue
 
