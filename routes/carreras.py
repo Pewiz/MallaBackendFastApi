@@ -37,20 +37,22 @@ async def crear_carrera(
     db_carrera = Carrera(
         nombre=nombre,
         nombre_malla=nombre_malla,
-        link_admision = link_admision,
+        link_admision=link_admision,
         url_image=url_imagee
     )
-    
+
     db.add(db_carrera)
     db.commit()
     db.refresh(db_carrera)
-    
+
     return db_carrera
+
 
 @router.get("/carreras", response_model=list[CarreraSimpleResponse])
 def obtener_carreras(db: Session = Depends(get_db)):
     return get_carreras(db)
 
+
 @router.get("/carreras/{carrera_id}", response_model=CarreraCompletaResponse)
 def obtener_carrera(carrera_id: int, db: Session = Depends(get_db)):
-    return get_carrera_con_ramos(db,carrera_id)
+    return get_carrera_con_ramos(db, carrera_id)

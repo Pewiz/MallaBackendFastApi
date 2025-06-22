@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://malla-ulagos.netlify.app"],  # Puedes cambiarlo a ["http://localhost:4321"] si quieres más seguridad
+    allow_origins=["https://malla-ulagos.netlify.app", "http://localhost:4321"],  # Puedes cambiarlo a ["http://localhost:4321"] si quieres más seguridad
     allow_credentials=True,
     allow_methods=["*"],  # Permite todos los métodos (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],  # Permite todos los headers

@@ -1,6 +1,6 @@
 from fastapi import HTTPException
-from sqlalchemy.orm import Session, aliased, joinedload
-from models import Carrera, Ramo, Prerequisito
+from sqlalchemy.orm import Session, aliased, joinedload, selectinload
+from models import Carrera, Ramo, Prerequisito, carrera_ramos
 from schemas import CarreraCreate, RamoCreate, PrerequisitoCreate, RamoResponse
 from sqlalchemy import func
 RamoRequisito = aliased(Ramo)
@@ -15,58 +15,51 @@ def create_carrera(db: Session, carrera: CarreraCreate):
 
 
 def get_carrera_con_ramos(db: Session, carrera_id: int):
-    # Consulta principal con todas las relaciones necesarias
-    carrera = db.query(Carrera).options(
-        joinedload(Carrera.ramos).subqueryload(Ramo.prerequisitos),
-        joinedload(Carrera.ramos).subqueryload(Ramo.desbloquea)
-    ).filter(Carrera.id == carrera_id).first()
-
+    # Consulta optimizada para obtener solo los datos necesarios
+    carrera = db.query(Carrera).filter(Carrera.id == carrera_id).first()
     if not carrera:
         return None
 
-    # Diccionario con información de todos los ramos: id -> nombre
-    todos_ramos = {
-        r.id: r.nombre
-        for r in db.query(Ramo.id, Ramo.nombre).all()
-    }
+    # Obtener ramos de la carrera con sus relaciones en una sola consulta optimizada
+    ramos_carrera = db.query(Ramo).options(
+        selectinload(Ramo.prerequisitos),
+        selectinload(Ramo.desbloquea)
+    ).join(carrera_ramos).filter(carrera_ramos.c.carrera_id == carrera_id).all()
+
+    # Crear diccionario de IDs y nombres de ramos de esta carrera
+    ramos_info = {ramo.id: ramo.nombre for ramo in ramos_carrera}
 
     ramos_procesados = []
-    for ramo in carrera.ramos:
-        # Lista de prerequisitos (nombres)
-        prev_list = [todos_ramos.get(p.requisito_id) for p in ramo.prerequisitos]
+    excluded_ramos = {
+        "Práctica Profesional", "Anteproyecto de Título",
+        "Taller Integrado I", "Taller Integrado II",
+        "Internado Gestión del Cuidado I", "Internado Gestión del Cuidado II",
+        "Proyecto de Título"
+    }
 
-        # Lista de ramos que desbloquea (nombres)
-        next_list = []
-        for d in ramo.desbloquea:
-            unlocked_id = d.ramo_id
-            unlocked_name = todos_ramos.get(unlocked_id)
+    for ramo in ramos_carrera:
+        # Procesar prerrequisitos (solo los de esta carrera)
+        prev_list = [
+            ramos_info[req.requisito_id]
+            for req in ramo.prerequisitos
+            if req.requisito_id in ramos_info
+        ]
 
-            if not unlocked_name:
-                continue
+        # Procesar ramos desbloqueados (solo los de esta carrera)
+        next_list = [
+            ramos_info[des.ramo_id]
+            for des in ramo.desbloquea
+            if des.ramo_id in ramos_info and ramos_info[des.ramo_id] not in excluded_ramos
+        ]
 
-            # Puedes excluir ramos específicos si quieres seguir filtrando algunos:
-            if unlocked_name in [
-                "Práctica Profesional",
-                "Anteproyecto de Título",
-                "Taller Integrado I",
-                "Taller Integrado II",
-                "Internado Gestión del Cuidado I",
-                "Internado Gestión del Cuidado II",
-                "Proyecto de Título"
-            ]:
-                continue
-
-            next_list.append(unlocked_name)
-
-        ramo_data = {
+        ramos_procesados.append({
             "id": ramo.id,
             "nombre": ramo.nombre,
             "semestre": ramo.semestre,
             "prev": prev_list,
             "next": next_list,
             "carreras": None
-        }
-        ramos_procesados.append(ramo_data)
+        })
 
     return {
         "id": carrera.id,
@@ -80,9 +73,10 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
 
 
 def get_carreras(db: Session):
-    carreras = db.query(Carrera.id, Carrera.slug ,Carrera.nombre, Carrera.nombre_malla, Carrera.link_admision ,Carrera.url_image).all()
-    
-    return [{"id": c.id, "slug": c.slug ,"nombre": c.nombre, "nombre_malla": c.nombre_malla, "link_admision": c.link_admision ,"url_image": c.url_image} for c in carreras]
+    carreras = db.query(Carrera.id, Carrera.slug, Carrera.nombre,
+                        Carrera.nombre_malla, Carrera.link_admision, Carrera.url_image).all()
+
+    return [{"id": c.id, "slug": c.slug, "nombre": c.nombre, "nombre_malla": c.nombre_malla, "link_admision": c.link_admision, "url_image": c.url_image} for c in carreras]
 
 
 def create_ramo(db: Session, ramo: RamoCreate, carreras_ids: list[int], semestre: int):
