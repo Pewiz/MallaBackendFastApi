@@ -24,6 +24,7 @@ async def crear_carrera(
     nombre: str = Form(...),
     nombre_malla: str = Form(...),
     link_admision: str = Form(...),
+    area: str = Form(...),
     url_image: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
@@ -38,6 +39,7 @@ async def crear_carrera(
         nombre=nombre,
         nombre_malla=nombre_malla,
         link_admision=link_admision,
+        area=area,
         url_image=url_imagee
     )
 
