@@ -20,6 +20,7 @@ class CarreraSimpleResponse(CarreraBase):
     nombre: str
     nombre_malla:str
     link_admision: str
+    area: str
     url_image: Optional[str]
     class Config:
         from_attributes = True
@@ -31,6 +32,7 @@ class CarreraCompletaResponse (CarreraBase):
     nombre: str
     nombre_malla:str
     link_admision: str
+    area: str
     url_image: Optional[str]
     ramos: List["RamoSimpleResponse"]
     class Config:
