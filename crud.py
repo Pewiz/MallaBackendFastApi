@@ -34,7 +34,7 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
         "Práctica Profesional", "Anteproyecto de Título",
         "Taller Integrado I", "Taller Integrado II",
         "Internado Gestión del Cuidado I", "Internado Gestión del Cuidado II",
-        "Proyecto de Título", "Práctica Profesional I y II", "Práctica Profesional II y III", "Taller de Gestión Ambiental", "Proyectos 10: Título"
+        "Proyecto de Título", "Práctica Profesional I y II", "Práctica Profesional II y III", "Taller de Gestión Ambiental", "Proyectos 10: Título", "Taller de Ética Profesional", "Práctica Profesional I"
     }
 
     for ramo in ramos_carrera:
