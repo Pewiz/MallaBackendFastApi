@@ -21,10 +21,13 @@ def get_db():
 def crear_ramo(
     ramo_nombre: str = Query(..., description="Nombre del ramo"),
     semestre: int = Query(..., description="Semestre del ramo"),
+    sct: int = Query(..., description="SCT del ramo"),  
+    tp: int = Query(..., description="TP del ramo"),
+    ta: int = Query(..., description="TA del ramo"),
     carreras_ids: List[int] = Query(..., description="IDs de las carreras"),
     db: Session = Depends(get_db)
 ):
-    ramo = schemas.RamoCreate(nombre=ramo_nombre, semestre=semestre)
+    ramo = schemas.RamoCreate(nombre=ramo_nombre, semestre=semestre, sct=sct, tp=tp, ta=ta)
     return crud.create_ramo(db, ramo, carreras_ids, semestre)
 
 

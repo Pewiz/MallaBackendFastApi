@@ -32,6 +32,9 @@ class Ramo (Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True)
     semestre = Column(Integer)
+    sct = Column(Integer)
+    tp = Column(Integer)
+    ta = Column(Integer)
 
     carreras = relationship(
         "Carrera", secondary=carrera_ramos, back_populates="ramos")

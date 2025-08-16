@@ -42,6 +42,9 @@ class CarreraCompletaResponse (CarreraBase):
 class RamoBase (BaseModel):
     nombre: str
     semestre: int
+    sct: int
+    tp: int
+    ta: int
 
 
 class RamoCreate (RamoBase):

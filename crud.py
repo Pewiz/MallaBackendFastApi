@@ -56,6 +56,9 @@ def get_carrera_con_ramos(db: Session, carrera_id: int):
             "id": ramo.id,
             "nombre": ramo.nombre,
             "semestre": ramo.semestre,
+            "sct": ramo.sct,
+            "tp": ramo.tp,
+            "ta": ramo.ta,
             "prev": prev_list,
             "next": next_list,
             "carreras": None
@@ -85,7 +88,7 @@ def create_ramo(db: Session, ramo: RamoCreate, carreras_ids: list[int], semestre
         Ramo.nombre == ramo.nombre, Ramo.semestre == semestre).first()
 
     if not db_ramo:
-        db_ramo = Ramo(nombre=ramo.nombre, semestre=semestre)
+        db_ramo = Ramo(nombre=ramo.nombre, semestre=semestre, sct=ramo.sct, tp=ramo.tp, ta=ramo.ta)
         db.add(db_ramo)
         db.commit()
         db.refresh(db_ramo)
