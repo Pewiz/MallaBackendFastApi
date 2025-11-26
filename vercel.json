@@ -15,5 +15,18 @@
       "src": "/(.*)",
       "dest": "main.py"
     }
-  ]
+  ],
+  "buildCommand": null,
+  "devCommand": null,
+  "installCommand": null,
+  "framework": null,
+  "outputDirectory": null,
+  "public": false,
+  "regions": ["iad1"],
+  "env": {},
+  "build": {
+    "env": {
+      "NODE_VERSION": "24"
+    }
+  }
 }
